@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deacons</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #fdfeec;
+        }
+        .container {
+            max-width: 700px;
+        }
+        h2 {
+            width: fit-content;
+            margin: auto;
+        }
+        .form-container{ 
+            
+            max-height: 300px;
+            overflow-y: scroll;
+            margin: auto;
+        }
+
+        form {
+            max-width: 550px;
+            margin: auto;
+        }
+
+        input[type="checkbox"]{
+            display: none;
+        }
+
+        input[type="date"]{
+            width: fit-content;
+            margin-top: 10px;
+        }
+
+        .btn {
+            width: 150px;
+            display: block;
+            margin-left: auto;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-5">Attendence</h2>
+        {% if success %}
+            <div class="alert alert-success" role="alert">
+                {{ success }}
+            </div>
+        {% elif error %}
+            <div class="alert alert-warning" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+    
+            <form action="save" method="post">
+                {% csrf_token %}
+                <div class="border rounded p-2 form-container d-flex justify-content-between flex-wrap">
+                    {% for name in names %}
+                        <div class="name-btn mb-2 me-2 ">
+                            <input class="form-check-input" type="checkbox" name="name" value="{{ name }}" id="{{ name }}">
+                            <label class="form-check-label btn btn-outline-primary" for="{{ name }}">
+                                {{ name }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="date mt-2">
+                    <label for="date">Attendence Date</label>
+                    <input type="date" name="date" id="date" class="form-control">
+                </div>
+                <div class="submit mt-2">
+                    <input type="submit" value="save" class="btn btn-primary">
+                </div>
+            </form>
+    </div>
+
+
+
+    <script>
+
+        let names = document.querySelectorAll(".btn")
+        names.forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                let currentBtn = e.target
+                
+                setTimeout(() => {
+                    let checked = currentBtn.parentNode.querySelector("input").checked;
+                    if (checked) {
+                        currentBtn.classList.add("btn-primary");
+                        currentBtn.classList.remove("btn-outline-primary");
+
+                    } else {
+                        currentBtn.classList.remove("btn-primary");
+                        currentBtn.classList.add("btn-outline-primary");
+
+                    }
+                }, 0);
+            })
+        })
+
+    </script>
+
+</body>
+</html>
