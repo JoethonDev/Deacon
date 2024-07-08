@@ -9,7 +9,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets"
 ]
 
-def index_to_column_letter(index):
+def index_to_letter(index):
     letter = ""
     while index:
         mod = index % 26
@@ -35,7 +35,11 @@ def get_names():
 
 def find_next_col(sheet):
     col_index = len(sheet.get_all_values()[0]) + 1
-    return index_to_column_letter(col_index)
+    return index_to_letter(col_index)
+
+def find_next_row(sheet):
+    row_index = len(sheet.get_all_values()) + 1
+    return row_index
 
 def build_name_batch(sheet, col, names):
     batch = []
@@ -52,6 +56,12 @@ def build_name_batch(sheet, col, names):
             print(f"Error with name : {name}")
     return batch
 
+def update_sheet(sheet, records):
+    try :
+        sheet.batch_update(records)
+    except :
+        raise Exception("Something went wrong!")
+    
 
 def save_attendence(names: list, attendance_day: str):
     if not (names and attendance_day):
@@ -69,29 +79,26 @@ def save_attendence(names: list, attendance_day: str):
     ]
 
     try :
-        sheet.batch_update(records)
-    except :
-        raise Exception("Something went wrong!")
+        update_sheet(sheet, records)
+    except Exception as e:
+        raise e
     
     return "Attendance is saved successfully"
 
-# names = [
-#     "جورج عادل",
-#     "كاراس ثروت",
-#     "بيشوي جرجس",
-#     "مينا زكي",
-#     "كيرلس حارس",
-#     "توماس حارس",
-#     'جيلانيا مجدي',
-#     'مارلي سمير',
-#     'ميرولا وجدي',
-#     'ساندي عماد',
-#     'مريم مدحت',
-#     'كيفين مدحت',
-#     'كيفن هاني',
-#     'دانيال يوحنا'
+def add_name(name: str):
+    sheet = open_sheet()
+    row = find_next_row(sheet)
+    
+    records = [
+        {
+            "range" : f"A{row}",
+            "values" : [[name]]
+        }
+    ]
 
-# ]
-# current = date.today().strftime("%d/%m/%Y")
-# records = save_attendence(names, current)
-# print(records)
+    try :
+        update_sheet(sheet, records)
+    except Exception as e:
+        raise e
+    
+    return "Name is added successfully"

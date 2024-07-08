@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponseRedirect
 from django.urls import reverse
-from .functions import get_names, save_attendence
+from .functions import get_names, save_attendence, add_name
 
 
 
@@ -10,6 +10,8 @@ from .functions import get_names, save_attendence
 #   names : []
 #   date : dateTime
 # }
+# Task 3 : Add Name to tables
+
 
 # Create your views here.
 def index(request):
@@ -33,6 +35,15 @@ def submit_attendance(request):
     date = request.POST.get("date")
     try :
         msg = save_attendence(names, date)
+        request.session['success'] = msg
+    except Exception as e:
+        request.session['error'] =  str(e) 
+    return HttpResponseRedirect(reverse("index"))
+
+def submit_name(request):
+    name = request.POST.get("name")
+    try :
+        msg = add_name(name)
         request.session['success'] = msg
     except Exception as e:
         request.session['error'] =  str(e) 
