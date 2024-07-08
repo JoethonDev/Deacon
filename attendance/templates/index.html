@@ -12,6 +12,15 @@
         .container {
             max-width: 700px;
         }
+
+        .add-name{
+            width: 250px;
+        }
+
+        .add-name .btn{
+            width: fit-content !important;
+        }
+
         h2 {
             width: fit-content;
             margin: auto;
@@ -47,20 +56,27 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-5">Attendence</h2>
-        {% if success %}
-            <div class="alert alert-success" role="alert">
-                {{ success }}
-            </div>
-        {% elif error %}
-            <div class="alert alert-warning" role="alert">
-                {{ error }}
-            </div>
-        {% endif %}
+        <div class="add-name mb-3 mt-3">
+            <label for="name-field" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name-field" name="name">
+            <button class="btn btn-primary mt-2 submit-name">Add Name</button>
+        </div>
+
+        <div class="attendence">
+            <h2 class="mb-5">Attendence</h2>
+            {% if success %}
+                <div class="alert alert-success" role="alert">
+                    {{ success }}
+                </div>
+            {% elif error %}
+                <div class="alert alert-warning" role="alert">
+                    {{ error }}
+                </div>
+            {% endif %}
     
             <form action="save" method="post">
                 {% csrf_token %}
-                <div class="border rounded p-2 form-container d-flex justify-content-between flex-wrap">
+                <div class="border rounded p-2 form-container d-flex justify-content-between flex-wrap names-form">
                     {% for name in names %}
                         <div class="name-btn mb-2 me-2 ">
                             <input class="form-check-input" type="checkbox" name="name" value="{{ name }}" id="{{ name }}">
@@ -78,29 +94,136 @@
                     <input type="submit" value="save" class="btn btn-primary">
                 </div>
             </form>
+        </div>
     </div>
 
 
 
     <script>
+        // Constants
+        const NAMEDIV = document.querySelector(".add-name")
+        const NAME = document.querySelector("#name-field")
+        const ADDBTN = document.querySelector(".submit-name")
+        const NAMESFORM = document.querySelector(".names-form")
+        const DATE = document.querySelector("#date")
 
-        let names = document.querySelectorAll(".btn")
-        names.forEach(btn => {
+        // Functions
+        function removeAlert(element){
+            let fading = setInterval(() => {
+                element.style.opacity -= 0.2
+            }, 1000)
+            setTimeout(() => {
+                element.remove()
+                clearInterval(fading)
+            }, 5000)
+        }
+
+        function toggleActiveClass(input, btn){
+            let checked = input.checked;
+            if (checked) {
+                btn.classList.add("btn-primary");
+                btn.classList.remove("btn-outline-primary");
+
+            } else {
+                btn.classList.remove("btn-primary");
+                btn.classList.add("btn-outline-primary");
+            }
+        }
+
+        function activeBtn(btn){
             btn.addEventListener("click", (e) => {
                 let currentBtn = e.target
                 
                 setTimeout(() => {
-                    let checked = currentBtn.parentNode.querySelector("input").checked;
-                    if (checked) {
-                        currentBtn.classList.add("btn-primary");
-                        currentBtn.classList.remove("btn-outline-primary");
-
-                    } else {
-                        currentBtn.classList.remove("btn-primary");
-                        currentBtn.classList.add("btn-outline-primary");
-
-                    }
+                    toggleActiveClass(currentBtn.parentNode.querySelector("input"), currentBtn)
                 }, 0);
+            })
+        }
+
+        function activeNamesBtns(){
+            let names = document.querySelectorAll(".btn")
+            names.forEach(btn => {
+                activeBtn(btn)
+            })
+        }
+
+        function getLastSaturday(){
+            // Get the current date
+            const today = new Date();
+            
+            // Get the day of the week (0 is Sunday, 6 is Saturday)
+            const dayOfWeek = today.getDay();
+            
+            // Calculate the difference to the last Saturday
+            const offset = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
+            
+            // Subtract the offset from the current date to get the last Saturday
+            const lastSaturday = new Date(today);
+            lastSaturday.setDate(today.getDate() - offset);
+            
+            // Format the last Saturday as YYYY-MM-DD for the input field
+            const yyyy = lastSaturday.getFullYear();
+            const mm = String(lastSaturday.getMonth() + 1).padStart(2, '0'); // January is 0!
+            const dd = String(lastSaturday.getDate()).padStart(2, '0');
+            
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+            
+            // Return the formatted date
+            return formattedDate;
+        }
+
+        function setDateToSaturday(){
+            let saturdayDate = getLastSaturday()
+            DATE.value = saturdayDate
+        }
+
+        // Real-time 
+        // When page is loaded
+        window.addEventListener("DOMContentLoaded", () => {
+            activeNamesBtns()
+            setDateToSaturday()
+        })
+
+        // When new name is added
+        ADDBTN.addEventListener("click", () => {
+            // Send Request
+            let name = NAME.value
+            fetch("/names", ({
+                method: 'post',
+                body: JSON.stringify({
+                    "name" : name
+                })
+            }))
+            .then(response => response.json().then(data => ({"message" : data.message, "status":response.status})))
+            .then(result => {
+                let className = "alert-success"
+                if (result.status == 200){
+                    // Add Name Btn
+                    let nameBtn = `
+                        <div class="name-btn mb-2 me-2 ">
+                            <input class="form-check-input" type="checkbox" name="name" value="${name}" id="${name}">
+                            <label class="form-check-label btn btn-outline-primary" for="${name}">
+                                ${name}
+                            </label>
+                        </div>
+                    `
+                    NAME.value = ""
+                    NAMESFORM.insertAdjacentHTML("beforeend", nameBtn)
+                    // Active Btn
+                    activeBtn(NAMESFORM.lastElementChild)
+                }
+                else{
+                    className = "alert-danger"
+                }
+                let messageDiv = `
+                    <div class="alert ${className}" role="alert">
+                        ${result.message}
+                    </div>
+                `
+                NAMEDIV.insertAdjacentHTML("afterbegin", messageDiv)
+                let alert = NAMEDIV.firstElementChild
+                alert.style.opacity = 1
+                removeAlert(alert)
             })
         })
 

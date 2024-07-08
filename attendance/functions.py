@@ -33,6 +33,13 @@ def get_names():
     sheet = open_sheet()
     return sheet.col_values(1)[1:]
 
+def find_date_col(sheet, date):
+    value = sheet.find(date)
+    if value:
+        return index_to_letter(value.col)
+    return value
+
+
 def find_next_col(sheet):
     col_index = len(sheet.get_all_values()[0]) + 1
     return index_to_letter(col_index)
@@ -68,7 +75,9 @@ def save_attendence(names: list, attendance_day: str):
         raise Exception("Missing Data!")
 
     sheet = open_sheet()
-    col = find_next_col(sheet) # B
+    col = find_date_col(sheet, attendance_day)
+    if not col:
+        col = find_next_col(sheet) # B
 
     records = [
         {
@@ -86,6 +95,13 @@ def save_attendence(names: list, attendance_day: str):
     return "Attendance is saved successfully"
 
 def add_name(name: str):
+    if not name:
+        raise Exception("Missing Data!")
+    
+    names = get_names()
+    if name in names:
+        raise Exception("Name exists already")
+
     sheet = open_sheet()
     row = find_next_row(sheet)
     
@@ -99,6 +115,7 @@ def add_name(name: str):
     try :
         update_sheet(sheet, records)
     except Exception as e:
+        print(e)
         raise e
     
     return "Name is added successfully"
