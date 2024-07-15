@@ -14,7 +14,11 @@
         }
 
         .add-name{
-            width: 250px;
+            width: 400px;
+        }
+
+        .add-name h2{
+            margin: None !important;
         }
 
         .add-name .btn{
@@ -46,10 +50,14 @@
             margin-top: 10px;
         }
 
-        .btn {
+        .attendence .btn {
             width: 150px;
             display: block;
             margin-left: auto;
+        }
+
+        .pop-up{
+            
         }
 
     </style>
@@ -57,6 +65,10 @@
 <body>
     <div class="container">
         <div class="add-name mb-3 mt-3">
+            <div class="choices mb-2">
+                <button class="btn btn-primary choice-submit" data-choice="name">Add Name</button>
+                <button class="btn btn-outline-primary choice-submit" data-choice="class">Add Class</button>
+            </div>
             <label for="name-field" class="form-label">Name</label>
             <input type="text" class="form-control" id="name-field" name="name">
             <button class="btn btn-primary mt-2 submit-name">Add Name</button>
@@ -76,6 +88,16 @@
     
             <form action="save" method="post">
                 {% csrf_token %}
+                <div class="p-2 d-flex sheets-form flex-wrap">
+                    {% for sheet in sheets %}
+                        <div class="sheet-btn mb-2 me-2 ">
+                            <input class="btn-check" type="radio" name="sheet" value="{{ sheet }}" id="{{ sheet }}">
+                            <label class="btn btn-outline-primary" for="{{ sheet }}">
+                                {{ sheet }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
                 <div class="border rounded p-2 form-container d-flex justify-content-between flex-wrap names-form">
                     {% for name in names %}
                         <div class="name-btn mb-2 me-2 ">
@@ -105,9 +127,20 @@
         const NAME = document.querySelector("#name-field")
         const ADDBTN = document.querySelector(".submit-name")
         const NAMESFORM = document.querySelector(".names-form")
+        const SHEETSFORM = document.querySelector(".sheets-form")
         const DATE = document.querySelector("#date")
+        const SWITCHBTNS = document.querySelectorAll(".choice-submit")
 
         // Functions
+        function removeActiveClass(buttons){
+            if(buttons){
+                buttons.forEach(btn => {
+                    btn.classList.remove("btn-primary")
+                    btn.classList.add("btn-outline-primary")
+                })
+            }
+        }
+
         function removeAlert(element){
             let fading = setInterval(() => {
                 element.style.opacity -= 0.2
@@ -130,18 +163,77 @@
             }
         }
 
-        function activeBtn(btn){
+        function activeBtn(btn, btns=null){
             btn.addEventListener("click", (e) => {
                 let currentBtn = e.target
-                
+                if (btns){
+                    removeActiveClass(btns)
+                    btn.addEventListener("click", getNames())
+                }
                 setTimeout(() => {
                     toggleActiveClass(currentBtn.parentNode.querySelector("input"), currentBtn)
                 }, 0);
             })
         }
 
+        function buildNames(names){
+            let html = ""
+            names.forEach(name => {
+                html += `
+                <div class="name-btn mb-2 me-2 ">
+                    <input class="form-check-input" type="checkbox" name="name" value="${name}" id="${name}">
+                    <label class="form-check-label btn btn-outline-primary" for="${name}">
+                        ${name}
+                    </label>
+                </div>
+                
+                `
+            })
+            return html
+        }
+
+        // function activeBtns(divName){
+        //     if (divName == "sheets"){
+        //         activeSheetBtns()
+        //     }
+        //     else if (divName == "names"){
+        //         activeNamesBtns()
+        //     }
+        // }
+
+        function activeSheetBtns(){
+            let sheets = document.querySelectorAll(".sheets-form .btn")
+            sheets.forEach(btn => {
+                activeBtn(btn, sheets)
+            })
+        }
+
+        function sleep(milliseconds) {
+            const start = new Date().getTime();
+            let end = start;
+            while (end < start + milliseconds) {
+                end = new Date().getTime();
+            }
+        }
+
+        function getNames(){
+            setTimeout(() => {
+                fetch(`/names/${getSheetName()}`)
+                .then(response => response.json().then(data => ({"data": data, "status": response.status})))
+                .then(result => {
+                    if (result.status == 404){
+                        NAMESFORM.innerHTML = "There is No Names!"
+                    }
+                    else{
+                        NAMESFORM.innerHTML = buildNames(result.data.names)
+                        activeNamesBtns()
+                    }
+                })
+            }, 100)
+        }
+
         function activeNamesBtns(){
-            let names = document.querySelectorAll(".btn")
+            let names = document.querySelectorAll(".names-form .btn")
             names.forEach(btn => {
                 activeBtn(btn)
             })
@@ -180,37 +272,88 @@
         // Real-time 
         // When page is loaded
         window.addEventListener("DOMContentLoaded", () => {
+            activeSheetBtns()
             activeNamesBtns()
             setDateToSaturday()
+
+            // activate selecting buttons
+            SWITCHBTNS.forEach(choiceBtn => {
+                choiceBtn.addEventListener("click", (e) => {
+                    removeActiveClass(SWITCHBTNS)
+                    choiceBtn.classList.add("btn-primary")
+                    choiceBtn.classList.remove("btn-outline-primary")
+                })
+            })
         })
+
+        function getSheetName(){
+            let name = ""
+            let checked = document.querySelector(".sheets-form input:checked")
+            name = checked?.id
+            return name
+        }
+
+        function addName(name){
+            // Add Name Btn
+            let nameBtn = `
+                <div class="name-btn mb-2 me-2 ">
+                    <input class="form-check-input" type="checkbox" name="name" value="${name}" id="${name}">
+                    <label class="form-check-label btn btn-outline-primary" for="${name}">
+                        ${name}
+                    </label>
+                </div>
+            `
+            NAME.value = ""
+            NAMESFORM.insertAdjacentHTML("beforeend", nameBtn)
+        }
+
+        function addClass(sheet){
+            // Add Name Btn
+            let sheetBtn = `
+                <div class="sheet-btn mb-2 me-2 ">
+                    <input class="btn-check" type="radio" name="sheet" value="${sheet}" id="${sheet}">
+                    <label class="btn btn-outline-primary" for="${sheet}">
+                        ${sheet}
+                    </label>
+                </div>
+            `
+            NAME.value = ""
+            SHEETSFORM.insertAdjacentHTML("beforeend", sheetBtn)
+        }
 
         // When new name is added
         ADDBTN.addEventListener("click", () => {
             // Send Request
             let name = NAME.value
-            fetch("/names", ({
+            let url = "/names"
+            let choice = document.querySelector(".choices .btn-primary").dataset.choice
+            let data = {
+                    "name" : name,
+                    "sheet" : getSheetName(),
+            }
+            if (choice == "class"){
+                url = "/class"
+                data = {
+                    "sheet" : name
+                }
+            }
+            fetch(url, ({
                 method: 'post',
-                body: JSON.stringify({
-                    "name" : name
-                })
+                body: JSON.stringify(data)
             }))
             .then(response => response.json().then(data => ({"message" : data.message, "status":response.status})))
             .then(result => {
                 let className = "alert-success"
                 if (result.status == 200){
-                    // Add Name Btn
-                    let nameBtn = `
-                        <div class="name-btn mb-2 me-2 ">
-                            <input class="form-check-input" type="checkbox" name="name" value="${name}" id="${name}">
-                            <label class="form-check-label btn btn-outline-primary" for="${name}">
-                                ${name}
-                            </label>
-                        </div>
-                    `
-                    NAME.value = ""
-                    NAMESFORM.insertAdjacentHTML("beforeend", nameBtn)
-                    // Active Btn
-                    activeBtn(NAMESFORM.lastElementChild)
+                    if (choice == "class"){
+                        addClass(name)
+                        activeSheetBtns()
+
+                    }
+                    else if (choice == "name"){
+                        addName(name)
+                        activeBtn(NAMESFORM.lastElementChild)
+                    }
                 }
                 else{
                     className = "alert-danger"
