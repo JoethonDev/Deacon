@@ -36,7 +36,15 @@ def open_sheet(name=None):
 
 def get_names(sheet_name):
     sheet = open_sheet(sheet_name)
-    return sheet.col_values(1)[1:]
+    names = []
+    for name in sheet.col_values(1)[1:]:
+        name = name.split(" ")
+        if len(name) > 1:
+            names.append(f"{name[0]} {name[1]}")
+        else :
+            name = " ".join(name)
+            names.append(name)
+    return names
 
 def get_worksheets_names():
     workbook = open_workbook()
