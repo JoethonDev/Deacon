@@ -1,6 +1,7 @@
 import gspread
 from datetime import date
 from google.oauth2.service_account import Credentials
+import re
 
 SHEET_ID = "1v6oAU41-x2fEhgHfIVva7Dzcm3pqMiH9ed47XMWX3OM"
 API_KEY = "AIzaSyB3MA7LIcORdNPONzKtSRy6rxYMyqBt7C4"
@@ -68,7 +69,9 @@ def build_name_batch(sheet, col, names):
     batch = []
     for name in names :
         try :
-            row_index = sheet.find(name).row
+            name = re.compile(name, re.IGNORECASE)
+            cell = sheet.find(name)
+            row_index = cell.row
             row = col + str(row_index)
             data = {
                 "range" : f"{row}",
